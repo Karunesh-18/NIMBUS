@@ -6,7 +6,7 @@ NIMBUS is an Air Quality Analytics & Enforcement Platform built for hackathon de
 
 This repository is structured as a monorepo containing:
 
-- **`ET-AI_DOCS/`**: Hackathon strategy, roadmap, and frontend/backend requirements.
+- **`ET-AI_DOCS/`**: Hackathon strategy, roadmap, team structure/workflow, and frontend/backend requirements.
 - **`backend/`**: Python FastAPI backend template.
 - **`frontend/`**: React + Vite frontend template.
 
@@ -18,7 +18,8 @@ Refer to individual directories for specific setup and run instructions:
 
 ## Documentation References
 
-For specific architecture, contracts, and requirements, review the following documents:
+For specific architecture, contracts, roles, and requirements, review the following documents:
+- [Team Structure & Development Workflow](./ET-AI_DOCS/NIMBUS_Team_Structure_and_Workflow.md)
 - [Roadmap & API Contract](./ET-AI_DOCS/NIMBUS_Team_Roadmap.md)
 - [Backend Requirements](./ET-AI_DOCS/NIMBUS_Backend_Requirements.md)
 - [Frontend Requirements](./ET-AI_DOCS/NIMBUS_Frontend_Requirements.md)

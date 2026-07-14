@@ -6,14 +6,15 @@ This is the backend template for the NIMBUS platform, built using Python and Fas
 
 ```text
 backend/
-├── app/
+├── Person_C/         # Backend + AI Integration Lead codebase
 │   ├── api/          # Route handlers / API controllers
-│   ├── core/         # Configuration, database connection, security
 │   ├── models/       # SQLAlchemy database models
-│   ├── schemas/      # Pydantic validation schemas
+│   ├── database/     # Database session and setup
 │   ├── services/     # Business logic / DB queries
-│   ├── ai/           # AI/ML function wrappers
 │   ├── ingestion/    # Background data ingestion jobs
+│   ├── ai/           # AI/ML function wrappers
+│   ├── scheduler/    # APScheduler configuration
+│   ├── cache/        # In-memory or Redis caching
 │   └── main.py       # FastAPI application entrypoint with stubs
 ├── requirements.txt  # Python package dependencies
 └── README.md         # Documentation
@@ -47,7 +48,7 @@ backend/
 
 4. **Run the FastAPI development server:**
    ```bash
-   uvicorn app.main:app --reload
+   uvicorn Person_C.main:app --reload
    ```
 
 The API documentation will be available at:
