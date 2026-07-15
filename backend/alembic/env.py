@@ -21,7 +21,11 @@ from dotenv import load_dotenv
 # Add backend directory to path to locate Person_C package
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
-load_dotenv()
+# Load env from Person_C/.env (where credentials live) then fall back to cwd
+_env_file = os.path.join(os.path.dirname(__file__), "..", "Person_C", ".env")
+load_dotenv(_env_file)
+load_dotenv()  # also pick up any override from cwd
+
 
 from Person_C.models import Base
 target_metadata = Base.metadata

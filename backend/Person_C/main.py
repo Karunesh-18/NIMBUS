@@ -52,6 +52,29 @@ app.include_router(citizen.router)
 @app.get("/health", tags=["Health"])
 async def health_check():
     """
-    Simple health check.
+    Detailed health check — reports DB connectivity, last ingestion timestamps,
+    and in-memory cache size so issues are caught before judging, not during.
     """
-    return {"status": "healthy"}
+    from Person_C.scheduler.jobs import job_status
+    from Person_C.cache.memory import cache
+    from Person_C.database.session import engine
+
+    # DB connectivity check
+    db_status = "disconnected"
+    if engine is not None:
+        try:
+            with engine.connect() as conn:
+                conn.execute(__import__("sqlalchemy").text("SELECT 1"))
+            db_status = "connected"
+        except Exception:
+            db_status = "error"
+
+    return {
+        "status":               "healthy",
+        "database":             db_status,
+        "last_openaq_poll":     job_status.get("last_openaq_poll"),
+        "last_weather_poll":    job_status.get("last_weather_poll"),
+        "last_satellite_poll":  job_status.get("last_satellite_poll"),
+        "last_cache_refresh":   job_status.get("last_cache_refresh"),
+        "cache_size":           len(cache._cache),
+    }

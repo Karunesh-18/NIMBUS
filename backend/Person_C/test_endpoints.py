@@ -1,12 +1,19 @@
 from fastapi.testclient import TestClient
 from Person_C.main import app
+from Person_C.services import data_access
 
 client = TestClient(app)
 
 def test_health():
     response = client.get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "healthy"}
+    data = response.json()
+    assert data["status"] == "healthy"
+    # Enriched fields must always be present (even if DB is disconnected)
+    assert "database" in data
+    assert "last_openaq_poll" in data
+    assert "last_weather_poll" in data
+    assert "cache_size" in data
 
 def test_wards_endpoint():
     response = client.get("/wards")
@@ -102,3 +109,13 @@ def test_advisory_endpoint():
     assert data["ward_id"] == 12
     assert "message" in data
     assert "risk_level" in data
+
+# ── Data access service layer tests ──────────────────────────────────────────
+def test_data_access_no_db_returns_empty_list():
+    """All service helpers must return empty lists gracefully when db=None."""
+    assert data_access.get_readings(1, "2026-07-15T00:00:00Z", db=None) == []
+    assert data_access.get_latest_readings(1, db=None) == []
+    assert data_access.get_permits(1, db=None) == []
+    assert data_access.get_industries(1, db=None) == []
+    assert data_access.get_weather(1, db=None) == []
+    assert data_access.get_ward_ids(db=None) == []
