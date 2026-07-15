@@ -56,13 +56,18 @@ MOCK_WARDS = [
 async def get_wards(db: Session = Depends(get_db)):
     """
     Returns list of wards with geometries (GeoJSON) and population stats.
+    Serves real PostGIS data when the wards table is populated;
+    falls back to the 4-ward mock set for local dev / CI with no DB.
     """
-    # Serve mock fallback in demo mode or if database is not reachable
-    if os.getenv("DEMO_MODE", "true").lower() == "true" or db is None:
+    if db is None:
         return {"wards": MOCK_WARDS}
 
     try:
-        # Query PostGIS wards using ST_AsGeoJSON
+        # Count wards — if zero, return mock so frontend never gets an empty list
+        count = db.query(Ward).count()
+        if count == 0:
+            return {"wards": MOCK_WARDS}
+            
         wards_db = db.query(
             Ward.id,
             Ward.name,

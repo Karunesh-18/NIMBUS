@@ -51,8 +51,7 @@ def test_forecast_endpoint():
     pt = data["points"][0]
     assert "ts" in pt
     assert "aqi" in pt
-    assert "confidence_low" in pt
-    assert "confidence_high" in pt
+    assert "confidence" in pt
 
 def test_attribution_endpoint():
     response = client.get("/attribution/12?ts=2026-07-15T09:56:32")
@@ -95,8 +94,8 @@ def test_enforcement_queue_endpoint():
     assert "queue" in data
     assert len(data["queue"]) > 0
     t = data["queue"][0]
-    assert "target_id" in t
-    assert "name" in t
+    assert "id" in t
+    assert "label" in t
     assert "geom" in t
     assert "priority_score" in t
     assert "status" in t
