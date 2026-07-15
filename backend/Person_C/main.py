@@ -1,12 +1,33 @@
-from fastapi import FastAPI, HTTPException
+import logging
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
+from Person_C.scheduler.jobs import start_scheduler
+
+# Setup logger
+logger = logging.getLogger("nimbus.main")
+logging.basicConfig(level=logging.INFO)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """
+    Manages the lifecycle of the FastAPI application.
+    Starts background ingestion schedulers on startup and shuts them down on shutdown.
+    """
+    logger.info("Initializing background scheduler on startup...")
+    scheduler = start_scheduler()
+    
+    yield
+    
+    if scheduler:
+        logger.info("Shutting down background scheduler...")
+        scheduler.shutdown()
 
 app = FastAPI(
     title="NIMBUS API",
     description="Backend API for NIMBUS Air Quality & Enforcement Platform (Person C)",
-    version="0.1.0"
+    version="0.1.0",
+    lifespan=lifespan
 )
 
 # CORS middleware for local frontend development
@@ -18,113 +39,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Pydantic models for request bodies
-class AskRequest(BaseModel):
-    question: str
+# Import and include routers
+from Person_C.api import wards, aqi, agent, simulation, enforcement, citizen
 
-class Intervention(BaseModel):
-    type: str
-    target_id: int
-    action: str
-
-class SimulateRequest(BaseModel):
-    ward_id: int
-    intervention: Intervention
-
-
-# 1. /aqi/surface - GET
-@app.get("/aqi/surface", tags=["AQI"])
-async def get_aqi_surface(bbox: str, ts: str):
-    """
-    Returns live colored AQI heatmap grid points.
-    Query params: bbox (lat1,lon1,lat2,lon2), ts (ISO8601)
-    """
-    return {
-        "grid": []
-    }
-
-# 2. /wards - GET
-@app.get("/wards", tags=["Wards"])
-async def get_wards():
-    """
-    Returns list of wards with geometries and population stats.
-    """
-    return {
-        "wards": []
-    }
-
-# 3. /forecast/{ward_id} - GET
-@app.get("/forecast/{ward_id}", tags=["AQI"])
-async def get_forecast(ward_id: int):
-    """
-    Returns AQI forecast points for a specific ward.
-    """
-    return {
-        "ward_id": ward_id,
-        "points": []
-    }
-
-# 4. /attribution/{ward_id} - GET
-@app.get("/attribution/{ward_id}", tags=["AQI"])
-async def get_attribution(ward_id: int, ts: str):
-    """
-    Returns pollution attribution analysis for a ward at a specific timestamp.
-    """
-    return {
-        "ward_id": ward_id,
-        "cause": "Mock cause (e.g., Construction dust & vehicular traffic)",
-        "confidence": 0.85,
-        "evidence": []
-    }
-
-# 5. /agent/ask - POST
-@app.post("/agent/ask", tags=["Agent"])
-async def ask_agent(req: AskRequest):
-    """
-    Q&A agent endpoint to query the system with natural language.
-    """
-    return {
-        "answer": "This is a stubbed response from the city agent. AI integration is pending.",
-        "citations": [],
-        "map_focus": {
-            "ward_id": 1,
-            "bbox": [12.97, 77.59, 12.99, 77.61]
-        }
-    }
-
-# 6. /simulate - POST
-@app.post("/simulate", tags=["Simulation"])
-async def simulate(req: SimulateRequest):
-    """
-    Runs counterfactual simulation by applying an intervention and returning before/after forecasts.
-    """
-    return {
-        "before": [],
-        "after": []
-    }
-
-# 7. /enforcement/queue - GET
-@app.get("/enforcement/queue", tags=["Enforcement"])
-async def get_enforcement_queue():
-    """
-    Returns prioritized enforcement task queue.
-    """
-    return {
-        "queue": []
-    }
-
-# 8. /advisory/{ward_id} - GET
-@app.get("/advisory/{ward_id}", tags=["Citizen"])
-async def get_advisory(ward_id: int, lang: str = "en"):
-    """
-    Returns localized citizen public health advisory.
-    Supported languages: en, hi, ta, kn, bn
-    """
-    return {
-        "ward_id": ward_id,
-        "message": "Stay indoors as much as possible. Air quality is currently poor, especially for vulnerable groups.",
-        "risk_level": "Poor"
-    }
+app.include_router(wards.router)
+app.include_router(aqi.router)
+app.include_router(agent.router)
+app.include_router(simulation.router)
+app.include_router(enforcement.router)
+app.include_router(citizen.router)
 
 @app.get("/health", tags=["Health"])
 async def health_check():
