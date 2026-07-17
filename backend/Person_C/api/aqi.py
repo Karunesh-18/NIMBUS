@@ -92,7 +92,7 @@ async def get_attribution(ward_id: int, ts: str, db: Session = Depends(get_db)):
         return cached_result
 
     # Call AI function
-    attr_res = attribute(ward_id, ts)
+    attr_res = attribute(ward_id, ts, db=db)
     
     # Save to database if available (non-blocking attempt)
     if db is not None and os.getenv("DEMO_MODE", "true").lower() != "true":

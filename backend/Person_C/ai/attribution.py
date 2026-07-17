@@ -32,7 +32,7 @@ def _aqi_category(v: float) -> str:
     return "Severe"
 
 def _get_ward_data(ward_id: str, db) -> dict:
-    """Fetch permits, industries, weather and ward vulnerability from DB."""
+    """Fetch permits, industries, weather, ward vulnerability and satellite data from DB."""
     try:
         import sqlalchemy as sa
         permits = db.execute(sa.text("""
@@ -54,16 +54,23 @@ def _get_ward_data(ward_id: str, db) -> dict:
             SELECT vulnerability_score FROM wards WHERE id = :wid
         """), {"wid": ward_id}).fetchone()
 
+        satellite = db.execute(sa.text("""
+            SELECT aerosol_index FROM satellite_readings
+            WHERE ward_id = :wid
+            ORDER BY ts DESC LIMIT 1
+        """), {"wid": ward_id}).fetchone()
+
         return {
-            "permits":    permits,
-            "industries": industries,
-            "wind_speed": weather.wind_speed if weather else 2.0,
-            "humidity":   weather.humidity   if weather else 60.0,
-            "vuln":       ward.vulnerability_score if ward else 0.5,
+            "permits":       permits,
+            "industries":    industries,
+            "wind_speed":    weather.wind_speed if weather else 2.0,
+            "humidity":      weather.humidity   if weather else 60.0,
+            "vuln":          ward.vulnerability_score if ward else 0.5,
+            "aerosol_index": satellite.aerosol_index if satellite else None,
         }
     except Exception as e:
         logger.warning(f"Ward data fetch failed for {ward_id}: {e}")
-        return {"permits": [], "industries": [], "wind_speed": 2.0, "humidity": 60.0, "vuln": 0.5}
+        return {"permits": [], "industries": [], "wind_speed": 2.0, "humidity": 60.0, "vuln": 0.5, "aerosol_index": None}
 
 def attribute(ward_id: str, ts: str, db=None) -> dict:
     """
@@ -129,6 +136,23 @@ def attribute(ward_id: str, ts: str, db=None) -> dict:
             met_notes.append(f"high humidity ({hum:.0f}%) — secondary aerosol formation")
         if met_notes:
             evidence.append({"type": "meteorological", "detail": "; ".join(met_notes)})
+
+        # ── 5. Satellite Aerosol Index (Meteorological/Regional) ────────────
+        aerosol = d.get("aerosol_index")
+        if aerosol is not None:
+            aerosol = float(aerosol)
+            # Aerosol index > 0.4 indicates elevated regional haze/dust/smoke.
+            if aerosol > 0.4:
+                scores["meteorological"] = scores.get("meteorological", 0.0) + (aerosol * 0.5)
+                evidence.append({
+                    "type": "satellite",
+                    "detail": f"Copernicus Sentinel-5P UV Aerosol Index is elevated at {aerosol:.3f} — indicates regional haze or smoke transport"
+                })
+            else:
+                evidence.append({
+                    "type": "satellite",
+                    "detail": f"Copernicus Sentinel-5P UV Aerosol Index is clear at {aerosol:.3f}"
+                })
 
         # ── Normalise scores → ranked causes ────────────────────────────────
         if not scores:

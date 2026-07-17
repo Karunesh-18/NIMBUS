@@ -92,12 +92,21 @@ def poll_weather():
 
 def poll_satellite():
     """
-    Copernicus Sentinel-5P aerosol index ingestion — stub for MVP.
-    Full implementation (HARP2/S5P REST API) is a Phase 2 improvement.
+    Copernicus Sentinel-5P aerosol index ingestion.
+    Fetches the daily average Aerosol Index and stores it in the database.
     """
-    logger.info("Job started: poll_satellite (stub — Sentinel-5P not yet implemented)")
-    job_status["last_satellite_poll"] = datetime.now(timezone.utc).isoformat()
-    logger.info("Job done: poll_satellite (no-op)")
+    logger.info("Job started: poll_satellite")
+    db = _get_db_session()
+    try:
+        from Person_C.ingestion.satellite import fetch_satellite_readings
+        count = fetch_satellite_readings(db=db)
+        job_status["last_satellite_poll"] = datetime.now(timezone.utc).isoformat()
+        logger.info(f"Job done: poll_satellite — {count} records inserted.")
+    except Exception as e:
+        logger.error(f"Job failed: poll_satellite — {e}")
+    finally:
+        if db:
+            db.close()
 
 def refresh_demo_cache():
     """
@@ -160,6 +169,7 @@ def start_scheduler() -> BackgroundScheduler | None:
         scheduler.add_job(poll_cpcb_openaq, "date", id="openaq_startup_run")
         scheduler.add_job(poll_ogd, "date", id="ogd_startup_run")
         scheduler.add_job(poll_weather,     "date", id="weather_startup_run")
+        scheduler.add_job(poll_satellite,   "date", id="satellite_startup_run")
         scheduler.add_job(refresh_demo_cache, "date", id="cache_startup_run")
 
         return scheduler

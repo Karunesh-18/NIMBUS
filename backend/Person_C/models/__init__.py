@@ -7,6 +7,7 @@ from Person_C.models.industry import Industry
 from Person_C.models.weather import Weather
 from Person_C.models.attribution import Attribution
 from Person_C.models.enforcement import EnforcementAction
+from Person_C.models.satellite import SatelliteReading
 
 __all__ = [
     "Base",
@@ -18,4 +19,5 @@ __all__ = [
     "Weather",
     "Attribution",
     "EnforcementAction",
+    "SatelliteReading",
 ]

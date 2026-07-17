@@ -54,6 +54,8 @@ def test_forecast_endpoint():
     assert "confidence" in pt
 
 def test_attribution_endpoint():
+    from Person_C.cache.memory import cache
+    cache.clear()
     response = client.get("/attribution/12?ts=2026-07-15T09:56:32")
     assert response.status_code == 200
     data = response.json()
@@ -62,6 +64,12 @@ def test_attribution_endpoint():
     assert "cause" in data
     assert "confidence" in data
     assert "evidence" in data
+    # Verify that satellite evidence is returned in the evidence list
+    satellite_evidence = [e for e in data["evidence"] if e.get("type") == "satellite"]
+    assert len(satellite_evidence) > 0
+    assert "Aerosol Index" in satellite_evidence[0]["detail"]
+
+
 
 def test_agent_ask_endpoint():
     response = client.post("/agent/ask", json={"question": "What is the worst ward?"})
