@@ -19,9 +19,16 @@ from Person_C.models.reading import Reading
 
 logger = logging.getLogger("nimbus.ingestion.openaq")
 
+from dotenv import load_dotenv
+
+# Load env variables explicitly so API_KEY is found regardless of import order
+_env_path = os.path.join(os.path.dirname(__file__), "..", ".env")
+load_dotenv(_env_path)
+
 OPENAQ_BASE = "https://api.openaq.org/v3"
 API_KEY = os.getenv("OPENAQ_API_KEY", "")
 CITY = os.getenv("DEMO_CITY", "Bangalore")
+BBOX = os.getenv("DEMO_BBOX", "12.87,77.47,13.08,77.78")
 
 # Indian CPCB AQI thresholds (based on PM2.5 24-hr avg equivalent breakpoints)
 AQI_THRESHOLDS = [
@@ -70,8 +77,12 @@ def fetch_openaq_readings(city: str = CITY, db: Optional[Session] = None) -> int
         logger.warning("No DB session provided — skipping OpenAQ ingestion.")
         return 0
 
-    logger.info(f"Fetching OpenAQ locations for city='{city}'...")
-    locations_data = _get("/locations", {"city": city, "limit": 100, "page": 1})
+    logger.info(f"Fetching OpenAQ locations for bbox='{BBOX}'...")
+    # bbox in v3 requires minLon,minLat,maxLon,maxLat
+    # DEMO_BBOX is lat1,lon1,lat2,lon2 so we flip it
+    lat1, lon1, lat2, lon2 = BBOX.split(",")
+    openaq_bbox = f"{lon1},{lat1},{lon2},{lat2}"
+    locations_data = _get("/locations", {"bbox": openaq_bbox, "limit": 100, "page": 1})
     if not locations_data or "results" not in locations_data:
         logger.warning("OpenAQ locations fetch returned no results.")
         return 0
@@ -111,7 +122,7 @@ def fetch_openaq_readings(city: str = CITY, db: Optional[Session] = None) -> int
             continue
 
         # ── Fetch latest measurements for this location ────────────────────
-        sensors_data = _get("/sensors", {"locations_id": loc_id, "limit": 50})
+        sensors_data = _get(f"/locations/{loc_id}/sensors", {"limit": 50})
         if not sensors_data or "results" not in sensors_data:
             continue
 

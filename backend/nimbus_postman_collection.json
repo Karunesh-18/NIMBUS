@@ -1,0 +1,202 @@
+{
+	"info": {
+		"_postman_id": "c1f6b5b5-4a5f-4d6d-8c1b-1a9f0e4b8b6a",
+		"name": "NIMBUS Backend Endpoints",
+		"description": "A collection of all API endpoints available in the NIMBUS Backend (Person C).",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/health",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"health"
+					]
+				},
+				"description": "Checks the health of the API, Database, and background scheduler."
+			},
+			"response": []
+		},
+		{
+			"name": "Get Wards",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/wards",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"wards"
+					]
+				},
+				"description": "Returns a list of all wards with their GeoJSON geometries and vulnerability scores."
+			},
+			"response": []
+		},
+		{
+			"name": "AQI Surface Interpolation",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/aqi/surface?bbox=12.87,77.47,13.08,77.78&ts={{$isoTimestamp}}",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"aqi",
+						"surface"
+					],
+					"query": [
+						{
+							"key": "bbox",
+							"value": "12.87,77.47,13.08,77.78",
+							"description": "Bounding box: lat1,lon1,lat2,lon2"
+						},
+						{
+							"key": "ts",
+							"value": "{{$isoTimestamp}}",
+							"description": "Timestamp"
+						}
+					]
+				},
+				"description": "Returns an 8x8 IDW interpolated grid of AQI values across the specified bounding box."
+			},
+			"response": []
+		},
+		{
+			"name": "AQI Forecast",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/forecast/1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"forecast",
+						"1"
+					]
+				},
+				"description": "Returns a 24-hour AQI forecast for the specified ward, using recent readings and meteorological data."
+			},
+			"response": []
+		},
+		{
+			"name": "Pollution Attribution",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/attribution/1?ts={{$isoTimestamp}}",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"attribution",
+						"1"
+					],
+					"query": [
+						{
+							"key": "ts",
+							"value": "{{$isoTimestamp}}",
+							"description": "Timestamp"
+						}
+					]
+				},
+				"description": "Returns ranked pollution sources (vehicular, construction, industrial, meteorological) for the specified ward."
+			},
+			"response": []
+		},
+		{
+			"name": "Enforcement Queue",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/enforcement/queue",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"enforcement",
+						"queue"
+					]
+				},
+				"description": "Returns a prioritized list of enforcement targets (active permits and red/orange industries)."
+			},
+			"response": []
+		},
+		{
+			"name": "AI Agent Q&A",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"question\": \"Which ward has the worst forecast for tomorrow?\"\n}"
+				},
+				"url": {
+					"raw": "{{base_url}}/agent/ask",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"agent",
+						"ask"
+					]
+				},
+				"description": "Asks the LLM agent a question about the city's air quality."
+			},
+			"response": []
+		},
+		{
+			"name": "Health Advisory",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/advisory/1?lang=en",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"advisory",
+						"1"
+					],
+					"query": [
+						{
+							"key": "lang",
+							"value": "en",
+							"description": "Language code (en, hi, kn)"
+						}
+					]
+				},
+				"description": "Generates a localized health advisory for a ward."
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://127.0.0.1:8000",
+			"type": "string"
+		}
+	]
+}

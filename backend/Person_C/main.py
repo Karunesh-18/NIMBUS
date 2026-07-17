@@ -73,6 +73,7 @@ async def health_check():
         "status":               "healthy",
         "database":             db_status,
         "last_openaq_poll":     job_status.get("last_openaq_poll"),
+        "last_ogd_poll":        job_status.get("last_ogd_poll"),
         "last_weather_poll":    job_status.get("last_weather_poll"),
         "last_satellite_poll":  job_status.get("last_satellite_poll"),
         "last_cache_refresh":   job_status.get("last_cache_refresh"),

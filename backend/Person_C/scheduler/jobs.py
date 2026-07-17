@@ -24,6 +24,7 @@ logging.basicConfig(level=logging.INFO)
 # ── Job status registry (updated by each job, exposed via /health) ───────────
 job_status: dict = {
     "last_openaq_poll":   None,
+    "last_ogd_poll":      None,
     "last_weather_poll":  None,
     "last_satellite_poll": None,
     "last_cache_refresh": None,
@@ -54,6 +55,21 @@ def poll_cpcb_openaq():
         logger.info(f"Job done: poll_cpcb_openaq — {count} readings inserted.")
     except Exception as e:
         logger.error(f"Job failed: poll_cpcb_openaq — {e}")
+    finally:
+        if db:
+            db.close()
+
+def poll_ogd():
+    """Ingest latest AQI readings from Indian OGD API. Runs every 15 minutes."""
+    logger.info("Job started: poll_ogd")
+    db = _get_db_session()
+    try:
+        from Person_C.ingestion.ogd import fetch_ogd_readings
+        count = fetch_ogd_readings(db=db)
+        job_status["last_ogd_poll"] = datetime.now(timezone.utc).isoformat()
+        logger.info(f"Job done: poll_ogd — {count} readings inserted.")
+    except Exception as e:
+        logger.error(f"Job failed: poll_ogd — {e}")
     finally:
         if db:
             db.close()
@@ -121,6 +137,10 @@ def start_scheduler() -> BackgroundScheduler | None:
             id="poll_cpcb_openaq_job", replace_existing=True
         )
         scheduler.add_job(
+            poll_ogd, "interval", minutes=15,
+            id="poll_ogd_job", replace_existing=True
+        )
+        scheduler.add_job(
             poll_weather, "interval", minutes=60,
             id="poll_weather_job", replace_existing=True
         )
@@ -138,6 +158,7 @@ def start_scheduler() -> BackgroundScheduler | None:
 
         # Kick off first poll immediately on startup (don't wait 15 min for first data)
         scheduler.add_job(poll_cpcb_openaq, "date", id="openaq_startup_run")
+        scheduler.add_job(poll_ogd, "date", id="ogd_startup_run")
         scheduler.add_job(poll_weather,     "date", id="weather_startup_run")
         scheduler.add_job(refresh_demo_cache, "date", id="cache_startup_run")
 

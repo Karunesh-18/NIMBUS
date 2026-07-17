@@ -50,3 +50,8 @@ __pycache__/
 # OS files
 .DS_Store
 Thumbs.db
+
+# AI/Agent skills supabase documentation
+.agents/skills/supabase/references/
+.agents/skills/supabase-postgres-best-practices/references/
+
